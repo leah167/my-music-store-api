@@ -8,6 +8,9 @@ const userSchema = new mongoose.Schema({
   hashedPassword: { type: String, required: true },
   profilePicture: { type: String, required: true, trim: true },
   isAdmin: { type: Boolean, required: true, default: false },
+  favorites: [
+    { type: mongoose.Schema.Types.ObjectId, ref: "Product", unique: true },
+  ],
 });
 
 const UserModel = mongoose.model("User", userSchema);

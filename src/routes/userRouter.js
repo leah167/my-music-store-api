@@ -10,4 +10,8 @@ userRouter.post("/sign-in", UserService.signIn);
 //Route to create user accounts
 userRouter.post("/register-user", UserService.registerUser);
 
+userRouter.post("/update-favorites", UserService.updateFavorites);
+
+userRouter.get("/user-favorites", UserService.getUserFavorites);
+
 module.exports = userRouter;

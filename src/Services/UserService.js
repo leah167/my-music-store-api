@@ -2,6 +2,7 @@ const express = require("express");
 const bcrypt = require("bcrypt");
 const jwt = require("jsonwebtoken");
 const UserModel = require("../models/UserModel");
+const PermissionService = require("./PermissionService");
 
 const cleanUser = (userDocument) => {
   return {
@@ -11,6 +12,7 @@ const cleanUser = (userDocument) => {
     email: userDocument.email,
     profilePicture: userDocument.profilePicture,
     isAdmin: userDocument.isAdmin,
+    favorites: userDocument.favorites,
   };
 };
 
@@ -28,20 +30,6 @@ userRouter.get("/sign-out", (req, res, next) => {
   res.clearCookie("session_token");
   res.send("Signed out successfully");
 });
-
-// userRouter.get("/test-auth", async (req, res, next) => {
-//   // check if user logged in
-//   // if logged in they should have valid jwt in their cookies
-//   try {
-//     // if the user has not logged in, return an error
-//     if (!req.user) {
-//       return res.status(403).send("User not logged in");
-//     }
-//     res.send({ user: req.user });
-//   } catch (error) {
-//     next(error);
-//   }
-// });
 
 //Route to create user accounts
 const registerUser = async (req, res, next) => {
@@ -129,10 +117,45 @@ const signIn = async (req, res, next) => {
   }
 };
 
+const updateFavorites = async (req, res, next) => {
+  try {
+    PermissionService.verifyUserLoggedIn(req, res);
+
+    const { productId } = req.body;
+
+    if (req.user.favorites.includes(productId)) {
+      req.user.favorites.pull(productId);
+      await req.user.save();
+      return res.send({ user: cleanUser(req.user), action: "removed" });
+    }
+
+    req.user.favorites.push(productId);
+
+    await req.user.save();
+
+    res.send({ user: cleanUser(req.user), action: "added" });
+  } catch (error) {
+    next(error);
+  }
+};
+
+const getUserFavorites = async (req, res, next) => {
+  try {
+    PermissionService.verifyUserLoggedIn(req, res);
+    await req.user.populate("favorites");
+    console.log("req.user", req.user);
+    res.send({ userFavorites: req.user.favorites });
+  } catch (error) {
+    next(error);
+  }
+};
+
 const UserService = {
   signIn,
   signOut,
   registerUser,
+  updateFavorites,
+  getUserFavorites,
 };
 
 module.exports = UserService;
